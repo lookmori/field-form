@@ -152,15 +152,19 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     }
   }
 
+
+  // 组件挂载，标记为挂载状态， 获取传递数据 --> Form 组件  <FieldContext.Provider value={formContextValue}>{childrenNode}</FieldContext.Provider>，注册组件本身
   public componentDidMount() {
     const { shouldUpdate, fieldContext } = this.props;
-
+    //  标记为挂载
     this.mounted = true;
 
     // Register on init
     if (fieldContext) {
       const { getInternalHooks }: InternalFormInstance = fieldContext;
+      //注册子组件本身
       const { registerField } = getInternalHooks(HOOK_MARK);
+      // 注册组件 ，将自身推进field数组中
       this.cancelRegisterFunc = registerField(this);
     }
 
@@ -170,22 +174,31 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     }
   }
 
+  // 组件销毁。 取消注册事件，取消挂载状态
   public componentWillUnmount() {
+    // 调用取消函数
     this.cancelRegister();
     this.triggerMetaEvent(true);
+    // 取消挂载状态
     this.mounted = false;
   }
 
+  // 取消注册事件
   public cancelRegister = () => {
     const { preserve, isListField, name } = this.props;
 
+    // 如果注册函数存在则取消
     if (this.cancelRegisterFunc) {
       this.cancelRegisterFunc(isListField, preserve, getNamePath(name));
     }
+    // 释放内存
     this.cancelRegisterFunc = null;
   };
 
+
+  // 工具函数
   // ================================== Utils ==================================
+  // 获取name数组
   public getNamePath = (): InternalNamePath => {
     const { name, fieldContext } = this.props;
     const { prefixName = [] }: InternalFormInstance = fieldContext;
@@ -193,6 +206,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     return name !== undefined ? [...prefixName, ...name] : [];
   };
 
+  // 返回校验规则 数组
   public getRules = (): RuleObject[] => {
     const { rules = [], fieldContext } = this.props;
 
@@ -204,11 +218,13 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     });
   };
 
+  // 重渲染
   public reRender() {
     if (!this.mounted) return;
     this.forceUpdate();
   }
 
+  // 刷新
   public refresh = () => {
     if (!this.mounted) return;
 
@@ -220,22 +236,32 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     }));
   };
 
+
+  // 暂时未知 onMetaChange作用
   public triggerMetaEvent = (destroy?: boolean) => {
     const { onMetaChange } = this.props;
 
     onMetaChange?.({ ...this.getMeta(), destroy });
   };
 
+  // ========================= 字段 接口 ======================
   // ========================= Field Entity Interfaces =========================
   // Trigger by store update. Check if need update the component
   public onStoreChange: FieldEntity['onStoreChange'] = (prevStore, namePathList, info) => {
     const { shouldUpdate, dependencies = [], onReset } = this.props;
+    // 获取当前表单 所有数据 
     const { store } = info;
+    // 获取name
     const namePath = this.getNamePath();
+    // 之前数据
     const prevValue = this.getValue(prevStore);
+    // 当前数据
     const curValue = this.getValue(store);
 
+    // 匹配name列表
     const namePathMatch = namePathList && containsNamePath(namePathList, namePath);
+
+    //   外部更新 数据 external --> 外部
 
     // `setFieldsValue` is a quick access to update related status
     if (info.type === 'valueUpdate' && info.source === 'external' && prevValue !== curValue) {
