@@ -244,7 +244,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     onMetaChange?.({ ...this.getMeta(), destroy });
   };
 
-  // ========================= 字段 接口 ======================
+  // ========================= 字段 接口 数据改变操作 ======================
   // ========================= Field Entity Interfaces =========================
   // Trigger by store update. Check if need update the component
   public onStoreChange: FieldEntity['onStoreChange'] = (prevStore, namePathList, info) => {
@@ -276,6 +276,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     switch (info.type) {
       case 'reset':
         if (!namePathList || namePathMatch) {
+          // 重置，清空所有状态
           // Clean up state
           this.touched = false;
           this.dirty = false;
@@ -305,6 +306,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
         break;
       }
 
+      // 赋值操作 设置字段数据
       case 'setField': {
         if (namePathMatch) {
           const { data } = info;
@@ -329,6 +331,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
           return;
         }
 
+        // 如果更新函数存在并且 name 不为空
         // Handle update by `setField` with `shouldUpdate`
         if (
           shouldUpdate &&
@@ -341,6 +344,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
         break;
       }
 
+      // 依赖项更新
       case 'dependenciesUpdate': {
         /**
          * Trigger when marked `dependencies` updated. Related fields will all update
@@ -349,6 +353,8 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
         // No need for `namePathMath` check and `shouldUpdate` check, since `valueUpdate` will be
         // emitted earlier and they will work there
         // If set it may cause unnecessary twice rerendering
+
+        // 只要有一个依赖项发生改变，就要 更新
         if (dependencyList.some(dependency => containsNamePath(info.relatedFields, dependency))) {
           this.reRender();
           return;
@@ -356,6 +362,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
         break;
       }
 
+      // 其他情况处理
       default:
         // 1. If `namePath` exists in `namePathList`, means it's related value and should update
         //      For example <List name="list"><Field name={['list', 0]}></List>
@@ -383,6 +390,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
     }
   };
 
+  // 验证规则
   public validateRules = (options?: ValidateOptions): Promise<RuleError[]> => {
     // We should fixed namePath & value to avoid developer change then by form function
     const namePath = this.getNamePath();
@@ -390,6 +398,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
 
     // Force change to async to avoid rule OOD under renderProps field
     const rootPromise = Promise.resolve().then(() => {
+      // 当前未挂载，返回空数组
       if (!this.mounted) {
         return [];
       }
@@ -430,6 +439,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
             const nextErrors: string[] = [];
             const nextWarnings: string[] = [];
             ruleErrors.forEach?.(({ rule: { warningOnly }, errors = EMPTY_ERRORS }) => {
+              // 如果是警告 推送到警告数组中，否则推送到错误数组，
               if (warningOnly) {
                 nextWarnings.push(...errors);
               } else {
@@ -437,6 +447,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
               }
             });
 
+            // 重新渲染 赋值
             this.errors = nextErrors;
             this.warnings = nextWarnings;
             this.triggerMetaEvent();
@@ -491,6 +502,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
   public isPreserve = () => this.props.preserve;
 
   // ============================= Child Component =============================
+  // 元数据信息 
   public getMeta = (): Meta => {
     // Make error & validating in cache to save perf
     this.prevValidating = this.isFieldValidating();
@@ -549,6 +561,7 @@ class Field extends React.Component<InternalFieldProps, FieldState> implements F
       fieldContext,
     } = this.props;
 
+    // 决定使用那个 validateTrigger 
     const mergedValidateTrigger =
       validateTrigger !== undefined ? validateTrigger : fieldContext.validateTrigger;
 
