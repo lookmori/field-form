@@ -75,10 +75,12 @@ export class FormStore {
 
   private lastValidatePromise: Promise<FieldError[]> = null;
 
+  // 赋值 强制更新
   constructor(forceRootUpdate: () => void) {
     this.forceRootUpdate = forceRootUpdate;
   }
 
+  // getForm 赋值
   public getForm = (): InternalFormInstance => ({
     getFieldValue: this.getFieldValue,
     getFieldsValue: this.getFieldsValue,
@@ -100,6 +102,7 @@ export class FormStore {
     getInternalHooks: this.getInternalHooks,
   });
 
+  // 内部hooks
   // ======================== Internal Hooks ========================
   private getInternalHooks = (key: string): InternalHooks | null => {
     if (key === HOOK_MARK) {
