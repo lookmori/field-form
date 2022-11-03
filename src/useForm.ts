@@ -141,9 +141,13 @@ export class FormStore {
   /**
    * First time `setInitialValues` should update store with initial value
    */
+  // 设置 初始值
   private setInitialValues = (initialValues: Store, init: boolean) => {
+    // 有则使用 无则 {}
     this.initialValues = initialValues || {};
+    // 是否是 第一次 初始化
     if (init) {
+      // 合并数据
       let nextStore = setValues({}, initialValues, this.store);
 
       // We will take consider prev form unmount fields.
@@ -158,6 +162,7 @@ export class FormStore {
     }
   };
 
+  // 销毁表单
   private destroyForm = () => {
     const prevWithoutPreserves = new NameMap<boolean>();
     this.getFieldEntities(true).forEach(entity => {
@@ -188,9 +193,11 @@ export class FormStore {
     this.preserve = preserve;
   };
 
+  // 观察者
   // ============================= Watch ============================
   private watchList: WatchCallBack[] = [];
 
+  // 注册观察者
   private registerWatch: InternalHooks['registerWatch'] = callback => {
     this.watchList.push(callback);
 
@@ -199,6 +206,7 @@ export class FormStore {
     };
   };
 
+  // 通知观察者，执行回调函数
   private notifyWatch = (namePath: InternalNamePath[] = []) => {
     // No need to cost perf when nothing need to watch
     if (this.watchList.length) {
@@ -210,6 +218,7 @@ export class FormStore {
     }
   };
 
+  // 开发环境 警告
   // ========================== Dev Warning =========================
   private timeoutId: any = null;
 
@@ -228,6 +237,7 @@ export class FormStore {
     }
   };
 
+  // 全局数据更新
   // ============================ Store =============================
   private updateStore = (nextStore: Store) => {
     this.store = nextStore;
@@ -246,6 +256,7 @@ export class FormStore {
     return this.fieldEntities.filter(field => field.getNamePath().length);
   };
 
+  // 将field转为map结构
   private getFieldsMap = (pure: boolean = false) => {
     const cache: NameMap<FieldEntity> = new NameMap();
     this.getFieldEntities(pure).forEach(field => {
@@ -255,6 +266,7 @@ export class FormStore {
     return cache;
   };
 
+  // 通过 name 获取field数据
   private getFieldEntitiesForNamePathList = (
     nameList?: NamePath[],
   ): (FieldEntity | InvalidateFieldEntity)[] => {
@@ -268,13 +280,14 @@ export class FormStore {
     });
   };
 
+  // 获取field 值
   private getFieldsValue = (nameList?: NamePath[] | true, filterFunc?: (meta: Meta) => boolean) => {
     this.warningUnhooked();
 
     if (nameList === true && !filterFunc) {
       return this.store;
     }
-
+    // 获取field数据
     const fieldEntities = this.getFieldEntitiesForNamePathList(
       Array.isArray(nameList) ? nameList : null,
     );
@@ -289,17 +302,18 @@ export class FormStore {
       if (!nameList && (entity as FieldEntity).isListField?.()) {
         return;
       }
-
+      // 如果不存在过滤函数 
       if (!filterFunc) {
         filteredNameList.push(namePath);
       } else {
+        // 实体 存在 getMeta 调用getMeta函数获取数据
         const meta: Meta = 'getMeta' in entity ? entity.getMeta() : null;
         if (filterFunc(meta)) {
           filteredNameList.push(namePath);
         }
       }
     });
-
+    // 返回克隆 数据
     return cloneByNamePathList(this.store, filteredNameList.map(getNamePath));
   };
 
@@ -310,6 +324,7 @@ export class FormStore {
     return getValue(this.store, namePath);
   };
 
+  // 获取 fields 错误信息
   private getFieldsError = (nameList?: NamePath[]) => {
     this.warningUnhooked();
 
@@ -332,6 +347,7 @@ export class FormStore {
     });
   };
 
+  // 获取 field 错误信息
   private getFieldError = (name: NamePath): string[] => {
     this.warningUnhooked();
 
@@ -339,7 +355,7 @@ export class FormStore {
     const fieldError = this.getFieldsError([namePath])[0];
     return fieldError.errors;
   };
-
+  // 获取 field 警告信息
   private getFieldWarning = (name: NamePath): string[] => {
     this.warningUnhooked();
 
@@ -348,6 +364,7 @@ export class FormStore {
     return fieldError.warnings;
   };
 
+  // field 是否挂载
   private isFieldsTouched = (...args) => {
     this.warningUnhooked();
 
@@ -407,6 +424,7 @@ export class FormStore {
       : namePathListEntities.some(isNamePathListTouched);
   };
 
+  // 获取单个field 挂载状态
   private isFieldTouched = (name: NamePath) => {
     this.warningUnhooked();
     return this.isFieldsTouched([name]);
@@ -677,6 +695,7 @@ export class FormStore {
     }
   };
 
+  // 观察者
   private notifyObservers = (
     prevStore: Store,
     namePathList: InternalNamePath[] | null,
