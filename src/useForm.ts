@@ -206,7 +206,7 @@ export class FormStore {
     };
   };
 
-  // 通知观察者，执行回调函数
+  // 执行回调函数
   private notifyWatch = (namePath: InternalNamePath[] = []) => {
     // No need to cost perf when nothing need to watch
     if (this.watchList.length) {
@@ -695,7 +695,7 @@ export class FormStore {
     }
   };
 
-  // 观察者
+  // 通知 观察者
   private notifyObservers = (
     prevStore: Store,
     namePathList: InternalNamePath[] | null,
@@ -718,12 +718,14 @@ export class FormStore {
    * Notify dependencies children with parent update
    * We need delay to trigger validate in case Field is under render props
    */
+  // 触发 依赖项更新
   private triggerDependenciesUpdate = (prevStore: Store, namePath: InternalNamePath) => {
     const childrenFields = this.getDependencyChildrenFields(namePath);
     if (childrenFields.length) {
       this.validateFields(childrenFields);
     }
 
+    // 通知 观察者 更新数据
     this.notifyObservers(prevStore, childrenFields, {
       type: 'dependenciesUpdate',
       relatedFields: [namePath, ...childrenFields],
@@ -732,20 +734,22 @@ export class FormStore {
     return childrenFields;
   };
 
+  // 更新数据
   private updateValue = (name: NamePath, value: StoreValue) => {
     const namePath = getNamePath(name);
     const prevStore = this.store;
     this.updateStore(setValue(this.store, namePath, value));
-
+    // 通知观察者
     this.notifyObservers(prevStore, [namePath], {
       type: 'valueUpdate',
       source: 'internal',
     });
+    // 执行回调函数
     this.notifyWatch([namePath]);
 
     // Dependencies update
     const childrenFields = this.triggerDependenciesUpdate(prevStore, namePath);
-
+    // 执行回调函数
     // trigger callback function
     const { onValuesChange } = this.callbacks;
 
@@ -757,6 +761,7 @@ export class FormStore {
     this.triggerOnFieldsChange([namePath, ...childrenFields]);
   };
 
+  // 所有字段 都须更新
   // Let all child Field get update.
   private setFieldsValue = (store: Store) => {
     this.warningUnhooked();
@@ -775,6 +780,7 @@ export class FormStore {
     this.notifyWatch();
   };
 
+  // 单个 更新
   private setFieldValue = (name: NamePath, value: any) => {
     this.setFields([
       {
@@ -868,6 +874,7 @@ export class FormStore {
       ? nameList.map(getNamePath)
       : [];
 
+    // 收集结果 promise
     // Collect result in promise list
     const promiseList: Promise<FieldError>[] = [];
 
@@ -881,6 +888,7 @@ export class FormStore {
        * Recursive validate if configured.
        * TODO: perf improvement @zombieJ
        */
+      // 是否递归处理 recursive 递归
       if (options?.recursive && provideNameList) {
         const namePath = field.getNamePath();
         if (
@@ -892,6 +900,7 @@ export class FormStore {
         }
       }
 
+      // 无规则 跳过
       // Skip if without rule
       if (!field.props.rules || !field.props.rules.length) {
         return;
@@ -915,7 +924,7 @@ export class FormStore {
             .catch((ruleErrors: RuleError[]) => {
               const mergedErrors: string[] = [];
               const mergedWarnings: string[] = [];
-
+              // 分别添加 错误 和警告信息
               ruleErrors.forEach?.(({ rule: { warningOnly }, errors }) => {
                 if (warningOnly) {
                   mergedWarnings.push(...errors);
@@ -924,6 +933,7 @@ export class FormStore {
                 }
               });
 
+              // 如果 错误信息存在 
               if (mergedErrors.length) {
                 return Promise.reject({
                   name: fieldNamePath,
@@ -941,7 +951,7 @@ export class FormStore {
         );
       }
     });
-
+    // 验证所有规则
     const summaryPromise = allPromiseFinish(promiseList);
     this.lastValidatePromise = summaryPromise;
 
@@ -950,6 +960,7 @@ export class FormStore {
       .catch(results => results)
       .then((results: FieldError[]) => {
         const resultNamePathList: InternalNamePath[] = results.map(({ name }) => name);
+        // 通知观察者 ，验证完成
         this.notifyObservers(this.store, resultNamePathList, {
           type: 'validateFinish',
         });
